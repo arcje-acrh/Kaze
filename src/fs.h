@@ -854,18 +854,18 @@ public:
         QPainter g(&px);
         g.setRenderHint(QPainter::Antialiasing);
         auto col = [this](const char *k, const char *fb) { const QString v = m_colors.value(k).toString(); return QColor(v.isEmpty() ? fb : v); };
-        QColor bg = col("surface", "#24283b"); bg.setAlphaF(0.95);
-        g.setPen(QPen(col("accent", "#7aa2f7"), 1));
+        QColor bg = col("surface", "#25262a"); bg.setAlphaF(0.95);
+        g.setPen(QPen(col("accent", "#b9bcc4"), 1));
         g.setBrush(bg);
         g.drawRoundedRect(QRectF(0.5, 0.5, w, h), 6, 6);
         g.setFont(f);
-        g.setPen(col("text", "#c0caf5"));
+        g.setPen(col("text", "#d4d5d9"));
         g.drawText(QRectF(12, 0, w, h), Qt::AlignVCenter, shown);
         if (!more.isEmpty()) {
             const QRectF b(w - fm.horizontalAdvance(more) - 14, 6, fm.horizontalAdvance(more) + 8, 16);
-            g.setPen(Qt::NoPen); g.setBrush(col("accent", "#7aa2f7"));
+            g.setPen(Qt::NoPen); g.setBrush(col("accent", "#b9bcc4"));
             g.drawRoundedRect(b, 8, 8);
-            g.setPen(col("bg", "#1a1b26"));
+            g.setPen(col("bg", "#1b1c1f"));
             g.drawText(b, Qt::AlignCenter, more);
         }
         return px;
@@ -1287,7 +1287,7 @@ private:
     // accent, comments dim (italic), punctuation muted, the rest text
     void writeCodeStyle() {
         auto c = [this](const char *k, const char *fallback) { const QString v = m_colors.value(k).toString(); return "\"" + (v.isEmpty() ? QString(fallback) : v) + "\""; };
-        const QString acc = c("accent", "#7aa2f7"), acc2 = c("accent2", "#e0af68"), text = c("text", "#c0caf5"), muted = c("muted", "#8b93bd"), dim = c("dim", "#565f89");
+        const QString acc = c("accent", "#b9bcc4"), acc2 = c("accent2", "#d0d2d7"), text = c("text", "#d4d5d9"), muted = c("muted", "#96989f"), dim = c("dim", "#5a5c62");
         QDir().mkpath(cacheDir());
         m_codeStyle = cacheDir() + "/code.style";
         QFile f(m_codeStyle);

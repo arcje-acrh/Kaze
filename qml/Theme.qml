@@ -1,22 +1,22 @@
 // Theme.qml -- colours + fonts. They come from the Udiksa shell's ~/.config/quickshell/colors.json and fonts.json
-// (Fs watches them: a theme change re-colours Kaze live). The values here are only the fallback (Tokyo
-// Night, one of Udiksa's themes) for when those files do not exist. Shapes and spacing follow macOS Finder.
+// (Fs watches them: a theme change re-colours Kaze live). The values here are only the fallback (Graphite,
+// Udiksa's neutral theme) for when those files do not exist. Shapes and spacing follow macOS Finder.
 pragma Singleton
 import QtQuick
 
 QtObject {
     readonly property var c: Fs.colors
     function pick(k, f) { return c[k] ? c[k] : f }
-    readonly property color bg:      pick("bg",      "#1a1b26")
-    readonly property color surface: pick("surface", "#24283b")
-    readonly property color raised:  pick("raised",  "#333a55")
-    readonly property color hover:   pick("hover",   "#3b4261")
-    readonly property color text:    pick("text",    "#c0caf5")
-    readonly property color muted:   pick("muted",   "#8b93bd")
-    readonly property color dim:     pick("dim",     "#565f89")
-    readonly property color coral:   pick("accent",  "#7aa2f7")   // main accent
-    readonly property color amber:   pick("accent2", "#e0af68")   // lighter accent: attention
-    readonly property color warn:    pick("warn",    "#e0af68")
+    readonly property color bg:      pick("bg",      "#1b1c1f")
+    readonly property color surface: pick("surface", "#25262a")
+    readonly property color raised:  pick("raised",  "#3b3c41")
+    readonly property color hover:   pick("hover",   "#484a4f")
+    readonly property color text:    pick("text",    "#d4d5d9")
+    readonly property color muted:   pick("muted",   "#96989f")
+    readonly property color dim:     pick("dim",     "#5a5c62")
+    readonly property color coral:   pick("accent",  "#b9bcc4")   // main accent
+    readonly property color amber:   pick("accent2", "#d0d2d7")   // lighter accent: attention
+    readonly property color warn:    pick("warn",    "#d0d2d7")
     readonly property color shadow:  pick("shadow",  "#000000")
     readonly property bool light: c.mode === "light"
 

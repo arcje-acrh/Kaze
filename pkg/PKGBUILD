@@ -3,7 +3,7 @@
 #   sudo pacman -R kaze               -> removes it again
 pkgname=kaze
 pkgver=0.1
-pkgrel=3
+pkgrel=4
 pkgdesc="Kaze, the Udiksa file manager (Qt 6 / QML)"
 arch=(x86_64)
 license=(MIT)

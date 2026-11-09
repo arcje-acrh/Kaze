@@ -9,9 +9,9 @@ Column, list and icon views · rich previews · undoable file operations · netw
 ![Qt 6](https://img.shields.io/badge/Qt-6.5%2B-41cd52?logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%C2%B7%20Wayland-1793d1?logo=linux&logoColor=white)
 ![Arch](https://img.shields.io/badge/package-Arch%20Linux-1793d1?logo=archlinux&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-7aa2f7)
+![License](https://img.shields.io/badge/license-MIT-5a5c62)
 
-![Kaze in column view, previewing a picture](docs/shots/columns.png)
+![Kaze in column view, previewing a picture](docs/images/columns.png)
 
 </div>
 
@@ -89,13 +89,13 @@ Udiksa shell when that is around (with a built-in theme when it is not).
 
 | | |
 |:---:|:---:|
-| ![Icon view with picture thumbnails](docs/shots/grid.png) | ![List view with the details panel and a rendered Markdown file](docs/shots/list.png) |
+| ![Icon view with picture thumbnails](docs/images/grid.png) | ![List view with the details panel and a rendered Markdown file](docs/images/list.png) |
 | **Icon view**: thumbnails for pictures, videos and PDFs | **List view** with the details panel: Markdown rendered |
-| ![Code preview in colour](docs/shots/code.png) | ![A video in the preview, with its details](docs/shots/video.png) |
+| ![Code preview in colour](docs/images/code.png) | ![A video in the preview, with its details](docs/images/video.png) |
 | **Code** in the theme's colours | **Videos** play in the preview |
-| ![Properties sheet with permission keys](docs/shots/properties.png) | ![Copy progress with pause and stop](docs/shots/progress.png) |
+| ![Properties sheet with permission keys](docs/images/properties.png) | ![Copy progress with pause and stop](docs/images/progress.png) |
 | **Properties**: permissions and owner | **Jobs**: progress, speed, time left, pause / stop |
-| ![Adding a network location](docs/shots/network.png) | ![Searching everywhere](docs/shots/search.png) |
+| ![Adding a network location](docs/images/network.png) | ![Searching everywhere](docs/images/search.png) |
 | **Network locations**: SMB shares in a few fields | **Search** here or everywhere |
 
 ## Install
