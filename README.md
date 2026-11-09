@@ -9,7 +9,7 @@ Column, list and icon views · rich previews · undoable file operations · netw
 ![Qt 6](https://img.shields.io/badge/Qt-6.5%2B-41cd52?logo=qt&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%C2%B7%20Wayland-1793d1?logo=linux&logoColor=white)
 ![Arch](https://img.shields.io/badge/package-Arch%20Linux-1793d1?logo=archlinux&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-orange)
+![License](https://img.shields.io/badge/license-MIT-7aa2f7)
 
 ![Kaze in column view, previewing a picture](docs/screenshots/columns.png)
 
