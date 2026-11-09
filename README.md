@@ -11,7 +11,7 @@ Column, list and icon views · rich previews · undoable file operations · netw
 ![Arch](https://img.shields.io/badge/package-Arch%20Linux-1793d1?logo=archlinux&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-7aa2f7)
 
-![Kaze in column view, previewing a picture](docs/screenshots/columns.png)
+![Kaze in column view, previewing a picture](docs/shots/columns.png)
 
 </div>
 
@@ -89,13 +89,13 @@ Udiksa shell when that is around (with a built-in theme when it is not).
 
 | | |
 |:---:|:---:|
-| ![Icon view with picture thumbnails](docs/screenshots/grid.png) | ![List view with the details panel and a rendered Markdown file](docs/screenshots/list.png) |
+| ![Icon view with picture thumbnails](docs/shots/grid.png) | ![List view with the details panel and a rendered Markdown file](docs/shots/list.png) |
 | **Icon view**: thumbnails for pictures, videos and PDFs | **List view** with the details panel: Markdown rendered |
-| ![Code preview in colour](docs/screenshots/code.png) | ![A video in the preview, with its details](docs/screenshots/video.png) |
+| ![Code preview in colour](docs/shots/code.png) | ![A video in the preview, with its details](docs/shots/video.png) |
 | **Code** in the theme's colours | **Videos** play in the preview |
-| ![Properties sheet with permission keys](docs/screenshots/properties.png) | ![Copy progress with pause and stop](docs/screenshots/progress.png) |
+| ![Properties sheet with permission keys](docs/shots/properties.png) | ![Copy progress with pause and stop](docs/shots/progress.png) |
 | **Properties**: permissions and owner | **Jobs**: progress, speed, time left, pause / stop |
-| ![Adding a network location](docs/screenshots/network.png) | ![Searching everywhere](docs/screenshots/search.png) |
+| ![Adding a network location](docs/shots/network.png) | ![Searching everywhere](docs/shots/search.png) |
 | **Network locations**: SMB shares in a few fields | **Search** here or everywhere |
 
 ## Install
