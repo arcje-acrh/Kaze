@@ -1,0 +1,179 @@
+#!/bin/bash
+# kaze-share -- Kaze's root helper for network locations (SMB shares), run through pkexec.
+#   kaze-share save     add or change a share (key=value lines on stdin, see below)
+#   kaze-share remove   take one out (stdin: path=<mount folder>)
+#   kaze-share fix      add `noserverino` to a share's line (stdin: path=<mount folder>) and reconnect it: Unraid /
+#                       FUSE-backed servers otherwise answer "stale file handle". Everything else on the line stays.
+# A share is what Udiksa's own shares are: an /etc/fstab cifs line (mounted when the folder is opened, dropped
+# when idle, never blocking boot), its sign-in in a root-only /etc/samba/credentials/<name>, a folder in your home.
+# save reads: old (the share's folder before, empty = new), server, share, path, user, password, domain, guest (1 =
+# no sign-in), keep (1 = keep the saved sign-in), vers ("" = automatic), ro (1 = read only), boot (1 = at startup
+# instead of on first use), idle (seconds before disconnecting, 0 = never), check (1 = try it before saving).
+# The password only travels on stdin and into the 600 file: never in arguments, output or logs.
+# KAZE_SHARE_ROOT=<dir> (tests): use <dir>/etc/..., $HOME as the home, and skip mount / systemctl / chown.
+set -euo pipefail
+umask 077
+
+ROOT=${KAZE_SHARE_ROOT:-}
+FSTAB=$ROOT/etc/fstab
+CREDS=$ROOT/etc/samba/credentials
+die() { echo "$*" >&2; exit 2; }
+
+if [[ -n $ROOT ]]; then uid=$(id -u); gid=$(id -g)
+else
+    [[ $EUID == 0 ]] || die "kaze-share must run as root (through pkexec)"
+    uid=${PKEXEC_UID:-${SUDO_UID:-}}
+    [[ $uid =~ ^[0-9]+$ && $uid != 0 ]] || die "Run this from Kaze (pkexec), not as root directly"
+    gid=$(id -g "$uid")
+fi
+if [[ -n $ROOT ]]; then home=$HOME; else home=$(getent passwd "$uid" | cut -d: -f6); fi
+[[ -n $home ]] || die "No home folder for user $uid"
+
+declare -A in=()
+while IFS= read -r line || [[ -n $line ]]; do
+    [[ $line == *=* ]] || continue
+    in[${line%%=*}]=${line#*=}
+done
+
+# fstab fields: spaces / tabs / backslashes as octal escapes
+esc() { local s=${1//\\/\\134}; s=${s// /\\040}; printf '%s' "${s//$'\t'/\\011}"; }
+unesc() { printf '%b' "$1"; }
+unit() { if [[ -n $ROOT ]]; then echo "x.$2"; else systemd-escape -p --suffix="$2" "$1"; fi; }
+sysd() { [[ -n $ROOT ]] || systemctl "$@" 2>/dev/null || true; }
+checkpath() {
+    local p=$1
+    [[ $p == "$home"/* && $p != *$'\n'* && $p != *$'\t'* && "/$p/" != */../* && "/$p/" != */./* ]] \
+        || die "The folder must be inside $home"
+}
+# the fstab line of a cifs share mounted at $1 (line number), if any
+lineof() {
+    local n=0 src mp type rest
+    while IFS= read -r l; do
+        n=$((n + 1))
+        [[ $l =~ ^[[:space:]]*# ]] && continue
+        read -r src mp type rest <<<"$l" || true
+        [[ $type == cifs || $type == smb3 ]] || continue
+        [[ $(unesc "$mp") == "$1" ]] && { echo $n; return; }
+    done <"$FSTAB"
+}
+# write fstab without line $1 (0 = none), plus $2 (may be empty) -- at the end, or in its place when $3 = inplace;
+# atomic, keeps a backup of the last version
+rewrite() {
+    local tmp
+    tmp=$(mktemp "$FSTAB.kaze.XXXXXX")
+    if [[ ${3:-} == inplace ]]; then L=$2 awk -v n="$1" 'NR == n { print ENVIRON["L"]; next } 1' "$FSTAB" >"$tmp"; set -- 0 ""
+    elif [[ $1 != 0 ]]; then sed "${1}d" "$FSTAB" >"$tmp"; else cat "$FSTAB" >"$tmp"; fi
+    [[ -z $(tail -c1 "$tmp") ]] || echo >>"$tmp"   # a last line without its newline would swallow ours
+    [[ -z $2 ]] || printf '%s\n' "$2" >>"$tmp"
+    chmod 644 "$tmp"
+    cp -p "$FSTAB" "$FSTAB.kaze-backup"
+    mv "$tmp" "$FSTAB"
+}
+optof() { tr ',' '\n' <<<"$1" | sed -n "s/^$2=//p" | head -1; }
+
+case ${1:-} in
+save)
+    server=${in[server]:-} share=${in[share]:-} path=${in[path]:-} old=${in[old]:-}
+    [[ $server =~ ^[A-Za-z0-9._:-]+$ ]] || die "Not a valid server name or address"
+    [[ -n $share && $share != *[/\\#$'\n\t']* ]] || die "Not a valid share name"
+    checkpath "$path"
+    [[ -z $old ]] || checkpath "$old"
+    [[ ${in[domain]:-} =~ ^[A-Za-z0-9._-]*$ ]] || die "Not a valid domain"
+    [[ ${in[vers]:-} =~ ^(|1\.0|2\.0|2\.1|3\.0|3\.02|3\.1\.1)$ ]] || die "Unknown SMB version"
+    [[ ${in[idle]:-600} =~ ^[0-9]+$ ]] || die "Not a valid idle time"
+    [[ ${in[user]:-} != *[$'\n']* ]] || die "Not a valid user name"
+
+    n=0; [[ -n $old ]] && n=$(lineof "$old")
+    [[ -n $old && -z $n ]] && die "That share is no longer in /etc/fstab"
+    [[ $path != "$old" && -n $(lineof "$path") ]] && die "Another share already uses $path"
+    oldcred=""
+    [[ $n != 0 ]] && oldcred=$(unesc "$(optof "$(sed -n "${n}p" "$FSTAB" | awk '{print $4}')" credentials)")
+
+    # the sign-in: guest = none; keep = the file it had; else a new 600 file named after the folder
+    name=$(basename "$path" | tr 'A-Z' 'a-z' | tr -d '\n' | tr -c 'a-z0-9._-' '-')
+    cred=""
+    if [[ ${in[guest]:-0} == 1 ]]; then cred=""
+    elif [[ ${in[keep]:-0} == 1 && -n $oldcred ]]; then cred=$oldcred
+    else
+        [[ -n ${in[user]:-} ]] || die "Type a user name (or choose guest)"
+        cred=$CREDS/$name
+        newcred=$(mktemp)
+        { echo "username=${in[user]}"; echo "password=${in[password]:-}"; [[ -z ${in[domain]:-} ]] || echo "domain=${in[domain]}"; } >"$newcred"
+    fi
+
+    base="uid=$uid,gid=$gid,iocharset=utf8"
+    [[ -n ${in[vers]:-} ]] && base="$base,vers=${in[vers]}"
+    if [[ -n $cred ]]; then auth="credentials=$(esc "$cred")"; else auth="guest"; fi
+    o="$auth,$base,noserverino,_netdev,nofail"   # noserverino: Unraid / FUSE-backed shares go "stale file handle" without it
+    [[ ${in[ro]:-0} == 1 ]] && o="$o,ro"
+    if [[ ${in[boot]:-0} != 1 ]]; then
+        o="$o,noauto,x-systemd.automount"
+        [[ ${in[idle]:-600} != 0 ]] && o="$o,x-systemd.idle-timeout=${in[idle]:-600}"
+    fi
+    o="$o,x-systemd.mount-timeout=10"
+    line="//$server/$(esc "$share") $(esc "$path") cifs $o 0 0"
+
+    # try it first (read only, in a scratch folder), so a wrong password or share name is said now, not later
+    if [[ -z $ROOT && ${in[check]:-1} == 1 ]]; then
+        t=$(mktemp -d /run/kaze-share.XXXXXX)
+        if [[ -n ${newcred:-} ]]; then to="credentials=$newcred,$base"; elif [[ -n $cred ]]; then to="credentials=$cred,$base"; else to="guest,$base"; fi
+        if ! err=$(timeout 25 mount -t cifs "//$server/$share" "$t" -o "$to,ro" 2>&1); then
+            rmdir "$t"; rm -f "${newcred:-/nonexistent}"
+            case $err in
+                *"error(13)"*) die "The server refused the user name or password" ;;
+                *"error(2)"*|*"error(6)"*) die "The server has no share called “$share”" ;;
+                *"error(95)"*) die "The server does not speak that SMB version: try Automatic" ;;
+                *"error(112)"*|*"error(113)"*|*"error(115)"*|*"error(111)"*|*"error(101)"*|"") die "The server isn't answering" ;;
+                *) die "Could not connect: $(tr '\n' ' ' <<<"$err")" ;;
+            esac
+        fi
+        umount "$t"; rmdir "$t"
+    fi
+
+    # stop the old one (it may move or change), then write
+    if [[ $n != 0 ]]; then
+        sysd stop "$(unit "$old" automount)" "$(unit "$old" mount)"
+    fi
+    if [[ -n ${newcred:-} ]]; then
+        mkdir -p "$CREDS"; chmod 700 "$CREDS"
+        install -m 600 "$newcred" "$cred"; rm -f "$newcred"
+        [[ -n $ROOT ]] || chown root:root "$cred"
+    fi
+    rewrite "${n:-0}" "$line"
+    # an old sign-in file nothing uses any more goes
+    if [[ -n $oldcred && $oldcred != "$cred" ]] && ! grep -q "credentials=$(esc "$oldcred")[,[:space:]]" "$FSTAB"; then rm -f "$oldcred"; fi
+    [[ -d $path ]] || { mkdir -p "$path"; [[ -n $ROOT ]] || chown "$uid:$gid" "$path"; }
+    sysd daemon-reload
+    if [[ ${in[boot]:-0} == 1 ]]; then [[ -n $ROOT ]] || mount "$path" 2>/dev/null || true
+    else sysd start "$(unit "$path" automount)"; fi
+    echo "saved"
+    ;;
+remove)
+    path=${in[path]:-}
+    checkpath "$path"
+    n=$(lineof "$path")
+    [[ -n $n ]] || die "That share is not in /etc/fstab"
+    cred=$(unesc "$(optof "$(sed -n "${n}p" "$FSTAB" | awk '{print $4}')" credentials)")
+    sysd stop "$(unit "$path" automount)" "$(unit "$path" mount)"
+    rewrite "$n" ""
+    if [[ -n $cred ]] && ! grep -q "credentials=$(esc "$cred")[,[:space:]]" "$FSTAB"; then rm -f "$cred"; fi
+    sysd daemon-reload
+    echo "removed"
+    ;;
+fix)
+    path=${in[path]:-}
+    checkpath "$path"
+    n=$(lineof "$path")
+    [[ -n $n ]] || die "That share is not in /etc/fstab"
+    read -r src mp type opts rest <<<"$(sed -n "${n}p" "$FSTAB")"
+    if [[ ,$opts, == *,noserverino,* ]]; then echo "already"; exit 0; fi
+    rewrite "$n" "$src $mp $type $opts,noserverino ${rest:-0 0}" inplace
+    sysd daemon-reload
+    # reconnect so it takes effect now; a share in use (a copy running) keeps its old connection until it is let go
+    sysd stop "$(unit "$path" mount)"
+    if [[ $opts == *x-systemd.automount* ]]; then sysd restart "$(unit "$path" automount)"
+    else [[ -n $ROOT ]] || mount "$path" 2>/dev/null || true; fi
+    if [[ -z $ROOT ]] && findmnt -n -o OPTIONS --target "$path" -t cifs,smb3 2>/dev/null | grep -qv noserverino; then echo "later"; else echo "fixed"; fi
+    ;;
+*) die "usage: kaze-share save|remove|fix  (fields on stdin)" ;;
+esac

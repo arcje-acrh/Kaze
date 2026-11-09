@@ -1,0 +1,5 @@
+# Kaze answers "Show in folder" from other apps. Installed to ~/.local/share/dbus-1/services/, which the session bus
+# reads before /usr/share/dbus-1/services/ (where Nautilus puts its own copy of this name).
+[D-BUS Service]
+Name=org.freedesktop.FileManager1
+Exec=/usr/bin/kaze --dbus-service

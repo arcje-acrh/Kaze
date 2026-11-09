@@ -1,0 +1,8 @@
+# build output
+build/
+# package build (makepkg) output
+pkg/src/
+pkg/pkg/
+pkg/*.pkg.tar.*
+# tests stay local
+tests/

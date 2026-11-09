@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Kaze
+GenericName=File Manager
+Comment=Browse and manage files
+Exec=kaze %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;Utility;Core;Qt;
+MimeType=inode/directory;
+StartupWMClass=kaze
