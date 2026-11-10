@@ -1,11 +1,11 @@
 # Kaze as a pacman package, built from this checkout (not a download):
-#   cd ~/Kaze/pkg && makepkg -si      -> /usr/bin/kaze, /usr/share/applications/kaze.desktop, /usr/lib/kaze/kaze-share
+#   cd Kaze/pkg && makepkg -si               -> /usr/bin/kaze, /usr/share/applications/kaze.desktop, /usr/lib/kaze/kaze-share
 #   sudo pacman -R kaze               -> removes it again
 pkgname=kaze
 pkgver=0.1
-pkgrel=4
+pkgrel=5
 pkgdesc="Kaze, the Udiksa file manager (Qt 6 / QML)"
-arch=(x86_64)
+arch=(x86_64 aarch64)
 license=(MIT)
 depends=(qt6-base qt6-declarative qt6-multimedia qt6-multimedia-ffmpeg plocate polkit util-linux coreutils libarchive glib2)
 makedepends=(cmake)

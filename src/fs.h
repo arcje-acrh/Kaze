@@ -75,6 +75,9 @@ class Fs : public QObject {
     Q_PROPERTY(QVariantMap colors MEMBER m_colors NOTIFY themeChanged)
     Q_PROPERTY(QVariantMap fonts MEMBER m_fonts NOTIFY themeChanged)
     Q_PROPERTY(QString home READ home CONSTANT)
+    // see-through sidebar only where the compositor blurs behind it; elsewhere it would show the bare wallpaper
+    // ponytail: Hyprland only (KDE blur, niri, SwayFX get the solid sidebar); KAZE_SEE_THROUGH=1/0 overrides
+    Q_PROPERTY(bool seeThrough READ seeThrough CONSTANT)
     Q_PROPERTY(QString trashDir READ trashDir CONSTANT)
     Q_PROPERTY(QString startDir MEMBER startDir CONSTANT)
     Q_PROPERTY(QString startSelect MEMBER startSelect CONSTANT)
@@ -704,7 +707,15 @@ public:
     // ---------- opening ----------
     Q_INVOKABLE void open(const QString &p) { QDesktopServices::openUrl(QUrl::fromLocalFile(p)); }
     Q_INVOKABLE void terminal(const QString &dir) {
-        QProcess::startDetached(qEnvironmentVariable("TERMINAL", "kitty"), {}, dir);
+        // $TERMINAL, else the desktop's own choice (xdg-terminal-exec), else the first common terminal installed
+        QStringList names{qEnvironmentVariable("TERMINAL"), "xdg-terminal-exec", "kitty", "foot", "alacritty", "ghostty",
+                          "wezterm", "konsole", "ptyxis", "kgx", "gnome-terminal", "xfce4-terminal", "tilix", "xterm"};
+        for (const QString &n : names)
+            if (!n.isEmpty() && !QStandardPaths::findExecutable(n).isEmpty()) { QProcess::startDetached(n, {}, dir); return; }
+    }
+    bool seeThrough() const {
+        const QString force = qEnvironmentVariable("KAZE_SEE_THROUGH");
+        return force.isEmpty() ? qEnvironmentVariableIsSet("HYPRLAND_INSTANCE_SIGNATURE") : force == "1";
     }
 
     // ---------- file operations ----------

@@ -10,7 +10,7 @@ Window {
     id: win
     width: 1280; height: 800
     visible: true
-    color: "transparent"
+    color: Fs.seeThrough ? "transparent" : Theme.surface   // sidebar glass only where it gets blurred
     title: "Kaze · " + name(pane.dir)
 
     property Pane pane: p1
