@@ -8,7 +8,8 @@ import QtCore
 
 Window {
     id: win
-    width: 1280; height: 800
+    // opening size: the same share of the screen everywhere (1280x800 on a 2048x1280 laptop), never a fixed pixel size
+    width: Math.round(Screen.desktopAvailableWidth * 0.625); height: Math.round(Screen.desktopAvailableHeight * 0.625)
     visible: true
     color: Fs.seeThrough ? "transparent" : Theme.surface   // sidebar glass only where it gets blurred
     title: "Kaze · " + name(pane.dir)
