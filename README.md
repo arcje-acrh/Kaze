@@ -109,7 +109,7 @@ makepkg -si
 ```
 
 This installs `/usr/bin/kaze`, its desktop entry, and the network-locations helper (`/usr/lib/kaze/kaze-share`).
-Remove it with `sudo pacman -R kaze`.
+The package is called `kaze-explorer` (the AUR `kaze` is an unrelated music player). Remove it with `sudo pacman -R kaze-explorer`.
 
 To make Kaze the default file manager and the one that answers "Show in folder":
 
